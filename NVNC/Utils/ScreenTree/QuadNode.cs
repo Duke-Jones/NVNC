@@ -1,8 +1,11 @@
-﻿using System;
+﻿#region
+
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Runtime.Serialization.Formatters;
 using System.Threading;
+
+#endregion
 
 namespace NVNC.Utils.ScreenTree
 {
@@ -13,20 +16,14 @@ namespace NVNC.Utils.ScreenTree
         internal static int MIN_WIDTH = 64;
 
         //The 2500000000000000th prime number
-        public static readonly long Q = 75674484987354031L;
-
-        public readonly int Id = _id++;
-        public Rectangle2 Bounds { get; private set; }
-        public int[] NodeData { get; private set; }
-        public long DataHash { get; internal set; }
-        public QuadNode Parent { get; internal set; }
-
-        public bool IsExpanded { get; internal set; }
+        public static long Q = 75674484987354031L;
+        public int[][] childrenData = new int[4][];
 
         public long[] childrenHashes = new long[4];
-        public int[][] childrenData = new int[4][];
-        public Rectangle2[] childrenRect = new Rectangle2[4];
         public QuadNode[] childrenNodes = new QuadNode[4];
+        public Rectangle2[] childrenRect = new Rectangle2[4];
+
+        public int Id = _id++;
 
         public QuadNode(Rectangle2 bounds, int[] data)
         {
@@ -34,6 +31,13 @@ namespace NVNC.Utils.ScreenTree
             NodeData = data;
             GenerateChildren();
         }
+
+        public Rectangle2 Bounds { get; set; }
+        public int[] NodeData { get; set; }
+        public long DataHash { get; internal set; }
+        public QuadNode Parent { get; internal set; }
+
+        public bool IsExpanded { get; internal set; }
 
         public QuadNode this[Direction direction]
         {
@@ -74,32 +78,34 @@ namespace NVNC.Utils.ScreenTree
                     value.Parent = this;
             }
         }
+
         public bool CanExpand()
         {
-            return (Bounds.Width > MIN_WIDTH && Bounds.Height > MIN_HEIGHT);
+            return Bounds.Width > MIN_WIDTH && Bounds.Height > MIN_HEIGHT;
         }
 
         public void CalculateHash()
         {
             if (!IsExpanded) return;
-            for (int i = 0; i < 4; i++)
+            for (var i = 0; i < 4; i++)
             {
-                int li = i;
-                Direction d = (Direction)li;
+                var li = i;
+                var d = (Direction) li;
                 this[d].CalculateHash();
-                DataHash = (DataHash + this[d].DataHash) % Q;
+                DataHash = (DataHash + this[d].DataHash)%Q;
             }
         }
+
         public void Expand()
         {
             if (CanExpand())
             {
                 IsExpanded = true;
                 //Thread[] cThreads = new Thread[4];
-                for (int i = 0; i < 4; i++)
+                for (var i = 0; i < 4; i++)
                 {
-                    int li = i;
-                    Direction d = (Direction)li;
+                    var li = i;
+                    var d = (Direction) li;
                     //cThreads[li] = new Thread(delegate()
                     //ThreadPool.QueueUserWorkItem(func =>
                     //{
@@ -130,22 +136,22 @@ namespace NVNC.Utils.ScreenTree
                     new ManualResetEvent(false)
                 };
 
-                for (int i = 0; i < 4; i++)
+                for (var i = 0; i < 4; i++)
                 {
-                    int li = i;
+                    var li = i;
                     ThreadPool.QueueUserWorkItem(func =>
                     {
-                        Dictionary<int, long> occurances = new Dictionary<int, long>();
+                        var occurances = new Dictionary<int, long>();
                         long h = 1;
                         long maxO = -1;
                         long maxV = -1;
 
                         for (long j = 0; j < childrenData[li].Length; j++)
                         {
-                            int px = childrenData[li][j];
-                            h = (h * ((px + j) % Q)) % Q;
+                            var px = childrenData[li][j];
+                            h = h*((px + j)%Q)%Q;
 
-                            int val = px;
+                            var val = px;
                             if (!occurances.ContainsKey(val))
                                 occurances.Add(val, 0);
                             occurances[val]++;
@@ -163,14 +169,15 @@ namespace NVNC.Utils.ScreenTree
                         //Calculates the percentage of different pixels in the rectangle
                         //If it is less than 10 in 1024, the tile is considered to be filled with a solid color
                         //The solid color used for filling is the color which occured the most times
-                        float percDiff = (float)diff / childrenData[li].Length;
+                        var percDiff = (float) diff/childrenData[li].Length;
                         if (percDiff < 0.01)
                         {
-                            childrenRect[li].SetSolidColor((int)maxV);
-                            childrenHashes[li] = ((long)Math.Pow(maxV * maxO * diff, 3)) % Q; //idk if the previous hash would be better or this one
+                            childrenRect[li].SetSolidColor((int) maxV);
+                            childrenHashes[li] = (long) Math.Pow(maxV*maxO*diff, 3)%Q;
+                            //idk if the previous hash would be better or this one
                         }
-                        DataHash = (DataHash + childrenHashes[li]) % Q;
-                        ((ManualResetEvent)waitHandles[li]).Set();
+                        DataHash = (DataHash + childrenHashes[li])%Q;
+                        ((ManualResetEvent) waitHandles[li]).Set();
                     });
                 }
                 WaitHandle.WaitAll(waitHandles);
@@ -179,29 +186,29 @@ namespace NVNC.Utils.ScreenTree
 
         public void GenerateChildren()
         {
-            int westX = Bounds.X;   //Keep X and Y just in case, needed on client side
-            int westY = Bounds.Y;
-            int westWidth = Bounds.Width / 2;
-            int westHeight = Bounds.Height / 2;
+            var westX = Bounds.X; //Keep X and Y just in case, needed on client side
+            var westY = Bounds.Y;
+            var westWidth = Bounds.Width/2;
+            var westHeight = Bounds.Height/2;
 
-            int eastX = westX + westWidth;
-            int eastY = westY;
-            int eastWidth = Bounds.Width - westWidth;
-            int eastHeight = Bounds.Height - westHeight;
+            var eastX = westX + westWidth;
+            var eastY = westY;
+            var eastWidth = Bounds.Width - westWidth;
+            var eastHeight = Bounds.Height - westHeight;
 
-            Rectangle2 nw = new Rectangle2(westX, westY, westWidth, westHeight);
-            int[] nwd = PixelGrabber.CopyPixels(NodeData, Bounds.Width, 0, 0, westWidth, westHeight);
-            childrenData[(int)Direction.NW] = nwd;//NodeData;
-            childrenRect[(int)Direction.NW] = nw;
+            var nw = new Rectangle2(westX, westY, westWidth, westHeight);
+            var nwd = PixelGrabber.CopyPixels(NodeData, Bounds.Width, 0, 0, westWidth, westHeight);
+            childrenData[(int) Direction.NW] = nwd; //NodeData;
+            childrenRect[(int) Direction.NW] = nw;
 
-            int parentWidth = Bounds.Width;
-            int scanline = parentWidth;
-            int size = westWidth * westHeight;
-            int jump = scanline - westWidth;
-            int s = 0;
-            int p = 0 * scanline + 0;
+            var parentWidth = Bounds.Width;
+            var scanline = parentWidth;
+            var size = westWidth*westHeight;
+            var jump = scanline - westWidth;
+            var s = 0;
+            var p = 0*scanline + 0;
             Trace.WriteLine("My offset: " + p);
-            for (int i = 0; i < size; i++, s++, p++)
+            for (var i = 0; i < size; i++, s++, p++)
             {
                 if (s == westWidth)
                 {
@@ -211,17 +218,18 @@ namespace NVNC.Utils.ScreenTree
             }
             Trace.WriteLine("My end: " + --p);
 
-            Rectangle2 ne = new Rectangle2(eastX, eastY, eastWidth, eastHeight);
-            
+            var ne = new Rectangle2(eastX, eastY, eastWidth, eastHeight);
+
             // TODO: Keep relative pixel start and end instead of copying the part of the array
             // The current implementation is a naive one and very slow, but it works as intended
-            childrenData[(int)Direction.NE] = PixelGrabber.CopyPixels(NodeData, Bounds.Width, westWidth, 0, eastWidth, eastHeight);
-            childrenRect[(int)Direction.NE] = ne;
+            childrenData[(int) Direction.NE] = PixelGrabber.CopyPixels(NodeData, Bounds.Width, westWidth, 0, eastWidth,
+                eastHeight);
+            childrenRect[(int) Direction.NE] = ne;
 
             s = 0;
-            p = 0 * scanline + westWidth;
+            p = 0*scanline + westWidth;
             Trace.WriteLine("My offset: " + p);
-            for (int i = 0; i < size; i++, s++, p++)
+            for (var i = 0; i < size; i++, s++, p++)
             {
                 if (s == westWidth)
                 {
@@ -232,27 +240,34 @@ namespace NVNC.Utils.ScreenTree
             Trace.WriteLine("My end: " + --p);
 
 
-            Rectangle2 sw = new Rectangle2(westX, westY + westHeight, westWidth, westHeight);
-            childrenData[(int)Direction.SW] = PixelGrabber.CopyPixels(NodeData, Bounds.Width, 0, 0 + westHeight, westWidth, westHeight);
-            childrenRect[(int)Direction.SW] = sw;
+            var sw = new Rectangle2(westX, westY + westHeight, westWidth, westHeight);
+            childrenData[(int) Direction.SW] = PixelGrabber.CopyPixels(NodeData, Bounds.Width, 0, 0 + westHeight,
+                westWidth, westHeight);
+            childrenRect[(int) Direction.SW] = sw;
 
-            Rectangle2 se = new Rectangle2(eastX, eastY + eastHeight, eastWidth, eastHeight);
-            childrenData[(int)Direction.SE] = PixelGrabber.CopyPixels(NodeData, Bounds.Width, westWidth, 0 + eastHeight, eastWidth, eastHeight);
-            childrenRect[(int)Direction.SE] = se;
+            var se = new Rectangle2(eastX, eastY + eastHeight, eastWidth, eastHeight);
+            childrenData[(int) Direction.SE] = PixelGrabber.CopyPixels(NodeData, Bounds.Width, westWidth, 0 + eastHeight,
+                eastWidth, eastHeight);
+            childrenRect[(int) Direction.SE] = se;
         }
+
         public static QuadNode EmptyNode()
         {
-            return new QuadNode(new Rectangle2(0, 0, 2, 2), new int[] { 0, 0, 0, 0 });
+            return new QuadNode(new Rectangle2(0, 0, 2, 2), new[] {0, 0, 0, 0});
         }
+
         #region Equality
+
         public int CompareTo(QuadNode other)
         {
             return Id - other.Id;
         }
+
         public override string ToString()
         {
-            return String.Format("{0}", Bounds);
+            return string.Format("{0}", Bounds);
         }
+
         public bool Equals(QuadNode other)
         {
             if (ReferenceEquals(null, other)) return false;
@@ -263,28 +278,31 @@ namespace NVNC.Utils.ScreenTree
 
             return ArrayEquals(NodeData, other.NodeData);
         }
+
         public override bool Equals(object obj)
         {
             if (ReferenceEquals(null, obj)) return false;
             if (ReferenceEquals(this, obj)) return true;
             if (obj.GetType() != GetType()) return false;
-            return Equals((QuadNode)obj);
+            return Equals((QuadNode) obj);
         }
 
         private bool ArrayEquals<T>(T[] a, T[] b)
         {
             if (a == null || b == null) return false;
             if (a.Length != b.Length) return false;
-            for (int i = 0; i < a.Length; i++)
+            for (var i = 0; i < a.Length; i++)
             {
                 if (!a[i].Equals(b[i])) return false;
             }
             return true;
         }
+
         public override int GetHashCode()
         {
-            return (int)((Bounds.GetHashCode() * (DataHash % Q)) % Q);
+            return (int) (Bounds.GetHashCode()*(DataHash%Q)%Q);
         }
+
         #endregion
     }
 }

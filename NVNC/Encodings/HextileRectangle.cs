@@ -1,28 +1,16 @@
-// NVNC - .NET VNC Server Library
-// Copyright (C) 2014 T!T@N
-//
-// This program is free software; you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation; either version 2 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#region
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using NVNC.Utils;
+
+#endregion
 
 namespace NVNC.Encodings
 {
     /// <summary>
-    /// Implementation of Hextile encoding.
+    ///     Implementation of Hextile encoding.
     /// </summary>
     public sealed class HextileRectangle : EncodedRectangle
     {
@@ -31,24 +19,9 @@ namespace NVNC.Encodings
         private const int FOREGROUND_SPECIFIED = 0x04;
         private const int ANY_SUBRECTS = 0x08;
         private const int SUBRECTS_COLORED = 0x10;
+        private readonly int[] pixels;
 
-        private Object[] tiles; // each element either Tile or byte[]
-        private int[] pixels;
-
-        private class Tile
-        {
-            public int bgpixel;
-            public SubRect[] subrects;
-        }
-
-        private class SubRect
-        {
-            public int pixel;
-            public int x;
-            public int y;
-            public int w;
-            public int h;
-        }
+        private object[] tiles; // each element either Tile or byte[]
 
         public HextileRectangle(VncHost rfb, Framebuffer framebuffer, int[] pixels, Rectangle2 rectangle)
             : base(rfb, framebuffer, rectangle)
@@ -58,10 +31,10 @@ namespace NVNC.Encodings
 
         private Tile ToTile(int[] pixeldata, int scanline, int x, int y, int w, int h)
         {
-            Tile tile = new Tile();
+            var tile = new Tile();
 
             SubRect subrect;
-            List<SubRect> vector = new List<SubRect>();
+            var vector = new List<SubRect>();
 
             int currentPixel;
             int currentX, currentY;
@@ -75,7 +48,7 @@ namespace NVNC.Encodings
 
             for (currentY = 0; currentY < h; currentY++)
             {
-                line = (currentY + y) * scanline + x;
+                line = (currentY + y)*scanline + x;
                 for (currentX = 0; currentX < w; currentX++)
                 {
                     if (pixeldata[line + currentX] != tile.bgpixel)
@@ -85,7 +58,7 @@ namespace NVNC.Encodings
                         firstYflag = true;
                         for (runningY = currentY; runningY < h; runningY++)
                         {
-                            segment = (runningY + y) * scanline + x;
+                            segment = (runningY + y)*scanline + x;
                             if (pixeldata[segment + currentX] != currentPixel)
                                 break;
                             runningX = currentX;
@@ -114,7 +87,7 @@ namespace NVNC.Encodings
                         subrect.y = currentY;
                         vector.Add(subrect);
 
-                        if ((firstW * firstH) > (secondW * secondH))
+                        if (firstW*firstH > secondW*secondH)
                         {
                             subrect.w = firstW;
                             subrect.h = firstH;
@@ -125,9 +98,9 @@ namespace NVNC.Encodings
                             subrect.h = secondH;
                         }
 
-                        for (runningY = subrect.y; runningY < (subrect.y + subrect.h); runningY++)
-                            for (runningX = subrect.x; runningX < (subrect.x + subrect.w); runningX++)
-                                pixeldata[(runningY + y) * scanline + x + runningX] = tile.bgpixel;
+                        for (runningY = subrect.y; runningY < subrect.y + subrect.h; runningY++)
+                            for (runningX = subrect.x; runningX < subrect.x + subrect.w; runningX++)
+                                pixeldata[(runningY + y)*scanline + x + runningX] = tile.bgpixel;
                     }
                 }
             }
@@ -136,16 +109,17 @@ namespace NVNC.Encodings
             tile.subrects = vector.ToArray();
             return tile;
         }
+
         private byte[] Raw(int[] pixeldata, int scanline, int x, int y, int w, int h)
         {
             byte[] bytez = null;
-            int b = 0;
-            int i = 0;
-            int s = 0;
+            var b = 0;
+            var i = 0;
+            var s = 0;
             int pixel;
-            int size = w * h;
-            int jump = scanline - w;
-            int p = y * scanline + x;
+            var size = w*h;
+            var jump = scanline - w;
+            var p = y*scanline + x;
             switch (framebuffer.BitsPerPixel)
             {
                 case 32:
@@ -158,10 +132,10 @@ namespace NVNC.Encodings
                             p += jump;
                         }
                         pixel = framebuffer.TranslatePixel(pixeldata[p]);
-                        bytez[b++] = (byte)(pixel & 0xFF);
-                        bytez[b++] = (byte)((pixel >> 8) & 0xFF);
-                        bytez[b++] = (byte)((pixel >> 16) & 0xFF);
-                        bytez[b++] = (byte)((pixel >> 24) & 0xFF);
+                        bytez[b++] = (byte) (pixel & 0xFF);
+                        bytez[b++] = (byte) ((pixel >> 8) & 0xFF);
+                        bytez[b++] = (byte) ((pixel >> 16) & 0xFF);
+                        bytez[b++] = (byte) ((pixel >> 24) & 0xFF);
                     }
                     break;
                 case 16:
@@ -174,8 +148,8 @@ namespace NVNC.Encodings
                             p += jump;
                         }
                         pixel = framebuffer.TranslatePixel(pixeldata[p]);
-                        bytez[b++] = (byte)(pixel & 0xFF);
-                        bytez[b++] = (byte)((pixel >> 8) & 0xFF);
+                        bytez[b++] = (byte) (pixel & 0xFF);
+                        bytez[b++] = (byte) ((pixel >> 8) & 0xFF);
                     }
                     break;
                 case 8:
@@ -187,7 +161,7 @@ namespace NVNC.Encodings
                             s = 0;
                             p += jump;
                         }
-                        bytez[i] = (byte)framebuffer.TranslatePixel(pixeldata[p]);
+                        bytez[i] = (byte) framebuffer.TranslatePixel(pixeldata[p]);
                     }
                     break;
             }
@@ -197,13 +171,13 @@ namespace NVNC.Encodings
 
         public override void Encode()
         {
-            int x = 0;//rectangle.X;
-            int y = 0;//rectangle.Y;
-            int w = rectangle.Width;
-            int h = rectangle.Height;
+            var x = 0; //rectangle.X;
+            var y = 0; //rectangle.Y;
+            var w = rectangle.Width;
+            var h = rectangle.Height;
 
             //System.Diagnostics.Stopwatch Watch = System.Diagnostics.Stopwatch.StartNew();
-            List<Object> vector = new List<Object>();
+            var vector = new List<object>();
             int currentX, currentY;
             int tileW, tileH;
             Tile tile1;
@@ -227,7 +201,7 @@ namespace NVNC.Encodings
                         tileH = 16;
 
                     tile1 = ToTile(pixels, w, currentX, currentY, tileW, tileH);
-                    
+
                     //tileMaxSize = tile1.subrects.Length * (2 + pixelSize) + (2 * pixelSize) + 1;
                     //if (tileMaxSize < rawMaxSize)
                     //{
@@ -242,9 +216,10 @@ namespace NVNC.Encodings
                 }
             }
 
-            tiles = new Object[vector.Count];
+            tiles = new object[vector.Count];
             tiles = vector.ToArray();
         }
+
         public override void WriteData()
         {
             base.WriteData();
@@ -252,21 +227,21 @@ namespace NVNC.Encodings
 
             Tile tile;
             int mask;
-            int oldBgpixel = 0x10000000;
-            int fgpixel = 0x10000000;
+            var oldBgpixel = 0x10000000;
+            var fgpixel = 0x10000000;
             int j;
 
             //Console.WriteLine("Tiles: " + tiles.Length);
 
             //Writing to a MemoryStream is faster, than writing to a NetworkStream, while being read chunk by chunk
             //Data is sent fast, when it is sent as one ordered byte array
-            using (System.IO.MemoryStream ms = new System.IO.MemoryStream())
+            using (var ms = new MemoryStream())
             {
-                for (int i = 0; i < tiles.Length; i++)
+                for (var i = 0; i < tiles.Length; i++)
                 {
                     if (tiles[i] is Tile)
                     {
-                        tile = (Tile)tiles[i];
+                        tile = (Tile) tiles[i];
                         mask = 0;
 
                         // Do we have subrects?				
@@ -302,12 +277,12 @@ namespace NVNC.Encodings
                         }
 
                         //pwriter.Write((byte)mask);
-                        ms.WriteByte((byte)mask);
+                        ms.WriteByte((byte) mask);
 
                         // Background pixel
                         if ((mask & BACKGROUND_SPECIFIED) != 0)
                         {
-                            byte[] pd = PixelGrabber.GrabBytes(tile.bgpixel, framebuffer);
+                            var pd = PixelGrabber.GrabBytes(tile.bgpixel, framebuffer);
                             ms.Write(pd, 0, pd.Length);
 
                             //pwriter.WritePixel(tile.bgpixel);
@@ -316,7 +291,7 @@ namespace NVNC.Encodings
                         // Foreground pixel
                         if ((mask & FOREGROUND_SPECIFIED) != 0)
                         {
-                            byte[] pd = PixelGrabber.GrabBytes(fgpixel, framebuffer);
+                            var pd = PixelGrabber.GrabBytes(fgpixel, framebuffer);
                             ms.Write(pd, 0, pd.Length);
                             //pwriter.WritePixel(fgpixel);
                         }
@@ -324,7 +299,7 @@ namespace NVNC.Encodings
                         // Subrects
                         if ((mask & ANY_SUBRECTS) != 0)
                         {
-                            ms.WriteByte((byte)tile.subrects.Length);
+                            ms.WriteByte((byte) tile.subrects.Length);
                             //pwriter.Write((byte)tile.subrects.Length);
 
                             //using (System.IO.MemoryStream ms = new System.IO.MemoryStream())
@@ -334,11 +309,11 @@ namespace NVNC.Encodings
                                 // Subrects colored
                                 if ((mask & SUBRECTS_COLORED) != 0)
                                 {
-                                    byte[] x = PixelGrabber.GrabBytes(tile.subrects[j].pixel, framebuffer);
+                                    var x = PixelGrabber.GrabBytes(tile.subrects[j].pixel, framebuffer);
                                     ms.Write(x, 0, x.Length);
                                 }
-                                ms.WriteByte((byte)((tile.subrects[j].x << 4) | tile.subrects[j].y));
-                                ms.WriteByte((byte)(((tile.subrects[j].w - 1) << 4) | (tile.subrects[j].h - 1)));
+                                ms.WriteByte((byte) ((tile.subrects[j].x << 4) | tile.subrects[j].y));
+                                ms.WriteByte((byte) (((tile.subrects[j].w - 1) << 4) | (tile.subrects[j].h - 1)));
                             }
                             //pwriter.Write(ms.ToArray());
                             //}
@@ -349,12 +324,27 @@ namespace NVNC.Encodings
                         ms.WriteByte(RAW);
                         //pwriter.Write((byte)RAW);
 
-                        ms.Write((byte[])tiles[i], 0, ((byte[])tiles[i]).Length);
+                        ms.Write((byte[]) tiles[i], 0, ((byte[]) tiles[i]).Length);
                         //pwriter.Write((byte[])tiles[i]);
                     }
                 }
                 rfb.Write(ms.ToArray());
             }
+        }
+
+        private class Tile
+        {
+            public int bgpixel;
+            public SubRect[] subrects;
+        }
+
+        private class SubRect
+        {
+            public int h;
+            public int pixel;
+            public int w;
+            public int x;
+            public int y;
         }
     }
 }

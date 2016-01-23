@@ -1,6 +1,6 @@
-# NVNC
+# NO-NVNC
 
-The first open-source .NET VNC Server written entirely in the C# programming language.
+Fork of NVNC designed to work with NoVNC and multiple bug fixes from the original fork.
 
 ### Features
 * Very small and stable NET VNC Server library
@@ -11,6 +11,5 @@ The first open-source .NET VNC Server written entirely in the C# programming lan
 * Minimum .NET Framework version: 2.0
 * Built for both x86 and x64 architectures
 * Supports Windows, Linux and Mac OS X via the Mono Framework
-* Tested and compatible with TightVNC, RealVNC, UltraVNC and all Java viewers
+* Tested and compatible with TightVNC, RealVNC, UltraVNC, NoVNC and all Java viewers
 
-**If you found NVNC useful in any way, please rate it, and share the project**

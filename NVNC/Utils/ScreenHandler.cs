@@ -1,51 +1,61 @@
-﻿using System;
+﻿#region
+
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using NVNC.Utils.ScreenTree;
 
+#endregion
+
 namespace NVNC.Utils
 {
     /// <summary>
-    /// A QuadTree structure for keeping information about the screen pixels
+    ///     A QuadTree structure for keeping information about the screen pixels
     /// </summary>
     public class ScreenHandler
     {
-        private QuadTree previous, current;
         private bool firstScreen;
-        public int[] LastPixels { get; private set; }
-        public Rectangle2 Bounds { get; set; }
-        private IEqualityComparer<QuadNode> Comparator { get; set; }
+        private QuadTree previous, current;
 
         /// <summary>
-        /// Creates a screen handler to get the changed parts of the screen since the last check.
+        ///     Creates a screen handler to get the changed parts of the screen since the last check.
         /// </summary>
         /// <param name="screen">A rectangle that represents which part of the screen will be handled.</param>
-        /// <param name="hashOnlyCompare">If true, pixel data will be checked only by its HashCode, otherwise it will be checked with the implemented Equals method</param>
+        /// <param name="hashOnlyCompare">
+        ///     If true, pixel data will be checked only by its HashCode, otherwise it will be checked
+        ///     with the implemented Equals method
+        /// </param>
         public ScreenHandler(Rectangle screen, bool hashOnlyCompare)
         {
             if (hashOnlyCompare)
                 Comparator = new HashComparer();
             else Comparator = new FullComparer();
 
-            Rectangle2 rect = new Rectangle2(screen);
+            var rect = new Rectangle2(screen);
             Bounds = rect;
 
             //One of the most expensive operations, getting the screen capture. Should be used as less as possible
-            int[] pixels = PixelGrabber.GrabPixels(PixelGrabber.CreateScreenCapture(screen));
+            var pixels = PixelGrabber.GrabPixels(PixelGrabber.CreateScreenCapture(screen));
             LastPixels = pixels;
 
-            int minTHeight = Bounds.Height / 6;
-            int minTWidth = Bounds.Width / 8;
-            current = new QuadTree(rect, pixels /*, minTHeight, minTWidth*/ );
+            var minTHeight = Bounds.Height/6;
+            var minTWidth = Bounds.Width/8;
+            current = new QuadTree(rect, pixels /*, minTHeight, minTWidth*/);
             previous = current;
             firstScreen = true;
         }
-        public ScreenHandler(Rectangle2 screen, bool hashOnlyCompare) : this(screen.ToRectangle(), hashOnlyCompare) { }
+
+        public ScreenHandler(Rectangle2 screen, bool hashOnlyCompare) : this(screen.ToRectangle(), hashOnlyCompare)
+        {
+        }
+
+        public int[] LastPixels { get; private set; }
+        public Rectangle2 Bounds { get; set; }
+        private IEqualityComparer<QuadNode> Comparator { get; }
 
         public ICollection<QuadNode> GetChange()
         {
-            HashSet<QuadNode> ret = new HashSet<QuadNode>();
+            var ret = new HashSet<QuadNode>();
             //If it is the first change request, send the whole screen
             //So the client has something to paint
             if (firstScreen)
@@ -57,7 +67,7 @@ namespace NVNC.Utils
             }
             RefreshCurrent();
 
-            Stopwatch r = Stopwatch.StartNew();
+            var r = Stopwatch.StartNew();
             GetChangeR(ret, previous.Root, current.Root);
             previous = current;
             r.Stop();
@@ -80,12 +90,12 @@ namespace NVNC.Utils
                 ret.Add(cRoot);
             else
             {
-                int countAdded = 0;
-                for (int i = 0; i < 4; i++)
+                var countAdded = 0;
+                for (var i = 0; i < 4; i++)
                 {
-                    GetChangeR(ret, pRoot[(Direction)i], cRoot[(Direction)i]);
+                    GetChangeR(ret, pRoot[(Direction) i], cRoot[(Direction) i]);
 
-                    if (ret.Contains(cRoot[(Direction)i]))
+                    if (ret.Contains(cRoot[(Direction) i]))
                     {
                         countAdded++;
                     }
@@ -94,9 +104,9 @@ namespace NVNC.Utils
                 //If all four subnodes have been added, remove them and add the parent node instead
                 if (countAdded == 4)
                 {
-                    for (int i = 0; i < 4; i++)
+                    for (var i = 0; i < 4; i++)
                     {
-                        ret.Remove(cRoot[(Direction)i]);
+                        ret.Remove(cRoot[(Direction) i]);
                     }
                     ret.Add(cRoot);
                 }
@@ -105,11 +115,11 @@ namespace NVNC.Utils
 
         private void RefreshCurrent()
         {
-            Stopwatch o = Stopwatch.StartNew();
-            Bitmap b = PixelGrabber.CreateScreenCapture(Bounds.ToRectangle());
+            var o = Stopwatch.StartNew();
+            var b = PixelGrabber.CreateScreenCapture(Bounds.ToRectangle());
 
-            Stopwatch c = Stopwatch.StartNew();
-            int[] pixels = PixelGrabber.GrabPixels(b);
+            var c = Stopwatch.StartNew();
+            var pixels = PixelGrabber.GrabPixels(b);
             c.Stop();
             Trace.WriteLine("Refresh grab done in: " + c.ElapsedMilliseconds + "ms");
 
@@ -132,6 +142,7 @@ namespace NVNC.Utils
                 return obj.GetHashCode();
             }
         }
+
         private class FullComparer : IEqualityComparer<QuadNode>
         {
             public bool Equals(QuadNode x, QuadNode y)

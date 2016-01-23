@@ -1,82 +1,61 @@
-// NVNC - .NET VNC Server Library
-// Copyright (C) 2014 T!T@N
-//
-// This program is free software; you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation; either version 2 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#region
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using NVNC.Utils;
+
+#endregion
 
 namespace NVNC.Encodings
 {
     /// <summary>
-    /// Implementation of RRE encoding.
+    ///     Implementation of RRE encoding.
     /// </summary>
     public class RreRectangle : EncodedRectangle
     {
+        protected internal int bgpixel;
         protected int[] pixels;
+        protected internal SubRect[] subrects;
+
         public RreRectangle(VncHost rfb, Framebuffer framebuffer, int[] pixels, Rectangle2 rectangle)
             : base(rfb, framebuffer, rectangle)
         {
             this.pixels = pixels;
         }
 
-        protected internal int bgpixel;
-        protected internal SubRect[] subrects;
-
-        protected internal class SubRect
-        {
-            public int pixel;
-            public ushort x;
-            public ushort y;
-            public ushort w;
-            public ushort h;
-        }
-
         public override unsafe void Encode()
         {
-            int x = 0;//rectangle.X;
-            int y = 0;//rectangle.Y;
-            int w = rectangle.Width;
-            int h = rectangle.Height;
+            var x = 0; //rectangle.X;
+            var y = 0; //rectangle.Y;
+            var w = rectangle.Width;
+            var h = rectangle.Height;
 
             SubRect subrect;
-            List<SubRect> vector = new List<SubRect>();
+            var vector = new List<SubRect>();
 
             int currentPixel;
             int runningX, runningY;
-            int firstX = 0;
-            int secondX = 0;
+            var firstX = 0;
+            var secondX = 0;
             bgpixel = GetBackground(pixels, w, x, y, w, h);
 
             fixed (int* px = pixels)
             {
-                for (int currentY = y; currentY < h; currentY++)
+                for (var currentY = y; currentY < h; currentY++)
                 {
-                    int line = currentY * w;
-                    for (int currentX = x; currentX < w; currentX++)
+                    var line = currentY*w;
+                    for (var currentX = x; currentX < w; currentX++)
                     {
                         if (*(px + (line + currentX)) != bgpixel)
                         {
                             currentPixel = *(px + (line + currentX));
-                            int firstY = currentY - 1;
-                            bool firstYflag = true;
+                            var firstY = currentY - 1;
+                            var firstYflag = true;
                             for (runningY = currentY; runningY < h; runningY++)
                             {
-                                int segment = runningY * w;
-                                if ((*(px + (segment + currentX))) != currentPixel)
+                                var segment = runningY*w;
+                                if (*(px + (segment + currentX)) != currentPixel)
                                     break;
                                 runningX = currentX;
                                 while ((runningX < w) && (*(px + (segment + runningX)) == currentPixel))
@@ -91,39 +70,40 @@ namespace NVNC.Encodings
                                 else
                                     firstYflag = false;
                             }
-                            int secondY = runningY - 1;
+                            var secondY = runningY - 1;
 
-                            int firstW = firstX - currentX + 1;
-                            int firstH = firstY - currentY + 1;
-                            int secondW = secondX - currentX + 1;
-                            int secondH = secondY - currentY + 1;
+                            var firstW = firstX - currentX + 1;
+                            var firstH = firstY - currentY + 1;
+                            var secondW = secondX - currentX + 1;
+                            var secondH = secondY - currentY + 1;
 
                             subrect = new SubRect();
                             subrect.pixel = currentPixel;
-                            subrect.x = (ushort)currentX;
-                            subrect.y = (ushort)currentY;
+                            subrect.x = (ushort) currentX;
+                            subrect.y = (ushort) currentY;
 
-                            if ((firstW * firstH) > (secondW * secondH))
+                            if (firstW*firstH > secondW*secondH)
                             {
-                                subrect.w = (ushort)firstW;
-                                subrect.h = (ushort)firstH;
+                                subrect.w = (ushort) firstW;
+                                subrect.h = (ushort) firstH;
                             }
                             else
                             {
-                                subrect.w = (ushort)secondW;
-                                subrect.h = (ushort)secondH;
+                                subrect.w = (ushort) secondW;
+                                subrect.h = (ushort) secondH;
                             }
                             vector.Add(subrect);
 
-                            for (runningY = subrect.y; runningY < (subrect.y + subrect.h); runningY++)
-                                for (runningX = subrect.x; runningX < (subrect.x + subrect.w); runningX++)
-                                    *(px + (runningY * w + runningX)) = bgpixel;
+                            for (runningY = subrect.y; runningY < subrect.y + subrect.h; runningY++)
+                                for (runningX = subrect.x; runningX < subrect.x + subrect.w; runningX++)
+                                    *(px + (runningY*w + runningX)) = bgpixel;
                         }
                     }
                 }
             }
             subrects = vector.ToArray();
         }
+
         public override void WriteData()
         {
             base.WriteData();
@@ -131,17 +111,17 @@ namespace NVNC.Encodings
             rfb.WriteUInt32(Convert.ToUInt32(subrects.Length));
             WritePixel32(bgpixel);
 
-            using (System.IO.MemoryStream ms = new System.IO.MemoryStream())
+            using (var ms = new MemoryStream())
             {
-                for (int i = 0; i < subrects.Length; i++)
+                for (var i = 0; i < subrects.Length; i++)
                 {
-                    byte[] data = PixelGrabber.GrabBytes(subrects[i].pixel, framebuffer);
+                    var data = PixelGrabber.GrabBytes(subrects[i].pixel, framebuffer);
 
                     //This is how BigEndianBinaryWriter writes short values :)
-                    byte[] x = Flip(BitConverter.GetBytes(subrects[i].x));
-                    byte[] y = Flip(BitConverter.GetBytes(subrects[i].y));
-                    byte[] w = Flip(BitConverter.GetBytes(subrects[i].w));
-                    byte[] h = Flip(BitConverter.GetBytes(subrects[i].h));
+                    var x = Flip(BitConverter.GetBytes(subrects[i].x));
+                    var y = Flip(BitConverter.GetBytes(subrects[i].y));
+                    var w = Flip(BitConverter.GetBytes(subrects[i].w));
+                    var h = Flip(BitConverter.GetBytes(subrects[i].h));
 
                     ms.Write(data, 0, data.Length);
                     ms.Write(x, 0, x.Length);
@@ -152,11 +132,21 @@ namespace NVNC.Encodings
                 rfb.Write(ms.ToArray());
             }
         }
+
         private byte[] Flip(byte[] b)
         {
             // Given an array of bytes, flip and write to underlying stream
             Array.Reverse(b);
             return b;
+        }
+
+        protected internal class SubRect
+        {
+            public ushort h;
+            public int pixel;
+            public ushort w;
+            public ushort x;
+            public ushort y;
         }
     }
 }

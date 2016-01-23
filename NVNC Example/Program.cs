@@ -1,25 +1,28 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿#region
+
+using System;
+using System.Threading.Tasks;
 using NVNC;
+
+#endregion
 
 namespace VNCTest
 {
-    class Program
+    internal class Program
     {
-        static void Main(string[] args)
+        private static void Main(string[] args)
         {
-            VncServer s = new VncServer("T!T@N", 5900, "T!T@N-VNC");
+            var s = new VncServer("password", 5901, 5900, "Ulterius VNC");
             try
             {
                 s.Start();
             }
             catch (ArgumentNullException ex)
             {
-                Console.WriteLine(ex.Message);
+               s.Stop();
                 return;
             }
-            Console.ReadLine();
+            
         }
     }
 }

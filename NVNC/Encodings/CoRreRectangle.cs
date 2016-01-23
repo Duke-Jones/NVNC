@@ -1,49 +1,37 @@
-// NVNC - .NET VNC Server Library
-// Copyright (C) 2014 T!T@N
-//
-// This program is free software; you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation; either version 2 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#region
 
 using System;
 using System.Collections.Generic;
 using NVNC.Utils;
 
+#endregion
+
 namespace NVNC.Encodings
 {
     /// <summary>
-    /// Implementation of CoRRE encoding.
+    ///     Implementation of CoRRE encoding.
     /// </summary>
     public sealed class CoRreRectangle : EncodedRectangle
     {
-        private int[] pixels;
+        private readonly int[] pixels;
+
+        public CoRRE[] rects;
+
         public CoRreRectangle(VncHost rfb, Framebuffer framebuffer, int[] pixels, Rectangle2 rectangle)
             : base(rfb, framebuffer, rectangle)
         {
             this.pixels = pixels;
         }
 
-        public CoRRE[] rects;
-
         public override void Encode()
         {
-            int x = 0;//rectangle.X;
-            int y = 0;//rectangle.Y;
-            int w = rectangle.Width;
-            int h = rectangle.Height;
+            var x = 0; //rectangle.X;
+            var y = 0; //rectangle.Y;
+            var w = rectangle.Width;
+            var h = rectangle.Height;
 
             CoRRE rect;
-            List<CoRRE> vector = new List<CoRRE>();
+            var vector = new List<CoRRE>();
 
 
             if ((w <= 0xFF) && (h <= 0xFF))
@@ -55,9 +43,9 @@ namespace NVNC.Encodings
             else
             {
                 int currentW, currentH;
-                for (int currentY = 0; currentY < h; currentY += 0xFF)
+                for (var currentY = 0; currentY < h; currentY += 0xFF)
                 {
-                    for (int currentX = 0; currentX < w; currentX += 0xFF)
+                    for (var currentX = 0; currentX < w; currentX += 0xFF)
                     {
                         try
                         {
@@ -68,7 +56,7 @@ namespace NVNC.Encodings
                                 currentW = 0xFF;
                             if (currentH > 0xFF)
                                 currentH = 0xFF;
-                            Rectangle2 rc = new Rectangle2(x + currentX, y + currentY, currentW, currentH);
+                            var rc = new Rectangle2(x + currentX, y + currentY, currentW, currentH);
                             rect = new CoRRE(rfb, framebuffer, pixels, rc);
 
                             //problem ... WHY ?
@@ -91,7 +79,7 @@ namespace NVNC.Encodings
         public override void WriteData()
         {
             Console.WriteLine(rects.Length);
-            foreach (CoRRE r in rects)
+            foreach (var r in rects)
                 r.WriteData();
         }
     }

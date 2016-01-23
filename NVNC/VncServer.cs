@@ -1,58 +1,42 @@
-﻿// NVNC - .NET VNC Server Library
-// Copyright (C) 2014 T!T@N
-//
-// This program is free software; you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation; either version 2 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+﻿#region
 
 using System;
 using System.Drawing;
+using System.Threading.Tasks;
+using System.Windows.Forms;
 using NVNC.Utils;
+
+#endregion
 
 namespace NVNC
 {
     /// <summary>
-    /// A wrapper class that should be used. It represents a VNC Server, and handles all the RFB procedures and communication.
+    ///     A wrapper class that should be used. It represents a VNC Server, and handles all the RFB procedures and
+    ///     communication.
     /// </summary>
     public class VncServer
     {
-        private VncHost host;
         private Framebuffer fb;
-
-        
-        public int Port { get; private set; }
-        public string Password { get; private set; }
+        private VncHost host;
+        private VncProxy proxy;
 
         /// <summary>
-        /// The VNC Server name.
-        /// <remarks>The variable value should be non-null.</remarks>
-        /// </summary>
-        public string Name { get; private set; }
-        /// <summary>
-        /// The default constructor using the default values for the parameters.
-        /// Port is set to 5900, the Name is set to Default, and there is no password.
+        ///     The default constructor using the default values for the parameters.
+        ///     Port is set to 5900, the Name is set to Default, and there is no password.
         /// </summary>
         public VncServer()
-            : this("", 5900, "Default")
-        { }
+            : this("", 5901, 5900, "Ulterius VNC")
+        {
+        }
 
-        public VncServer(string password, int port, string name)
+        public VncServer(string password, int proxyPort, int port, string name)
         {
             Password = password;
+            ProxyPort = proxyPort;
             Port = port;
             Name = name;
 
-            Size screenSize = ScreenSize();
+            var screenSize = ScreenSize();
             fb = new Framebuffer(screenSize.Width, screenSize.Height)
             {
                 BitsPerPixel = 32,
@@ -69,17 +53,40 @@ namespace NVNC
             };
         }
 
+
+        public int Port { get; set; }
+        public int ProxyPort { get; set; }
+        public string Password { get; set; }
+
+        /// <summary>
+        ///     The VNC Server name.
+        ///     <remarks>The variable value should be non-null.</remarks>
+        /// </summary>
+        public string Name { get; set; }
+
         public void Start()
         {
-
-            if (String.IsNullOrEmpty(Name))
+            if (string.IsNullOrEmpty(Name))
                 throw new ArgumentNullException("Name", "The VNC Server Name cannot be empty.");
             if (Port == 0)
-                throw new ArgumentNullException("Port", "The VNC Server port cannot be zero.");
-            Console.WriteLine("Started VNC Server at port: " + Port);
 
-            host = new VncHost(Port, Name, new ScreenHandler(new Rectangle(0, 0, ScreenSize().Width, ScreenSize().Height), true));
-            
+                throw new ArgumentNullException("Port", "The VNC Server port cannot be zero.");
+            if (ProxyPort == 0)
+
+                throw new ArgumentNullException("ProxyPort", "You must set a proxy port.");
+
+
+            Console.WriteLine("Started VNC Server at port: " + Port + " and proxy port at: " + ProxyPort);
+
+            proxy = new VncProxy(ProxyPort, Port);
+            Task.Factory.StartNew(() =>
+            {
+                proxy.StartWebsockify();
+            });
+            host = new VncHost(Port, Name,
+                new ScreenHandler(new Rectangle(0, 0, ScreenSize().Width, ScreenSize().Height), true));
+
+
             host.WriteProtocolVersion();
             Console.WriteLine("Wrote Protocol Version");
 
@@ -97,19 +104,19 @@ namespace NVNC
             {
                 Console.WriteLine("Authentication successfull !");
 
-                bool share = host.ReadClientInit();
+                var share = host.ReadClientInit();
                 Console.WriteLine("Share: " + share);
 
                 Console.WriteLine("Server name: " + fb.DesktopName);
                 host.WriteServerInit(fb);
 
-                while ((host.isRunning))
+                while (host.isRunning)
                 {
                     switch (host.ReadServerMessageType())
                     {
                         case VncHost.ClientMessages.SetPixelFormat:
                             Console.WriteLine("Read SetPixelFormat");
-                            Framebuffer f = host.ReadSetPixelFormat(fb.Width, fb.Height);
+                            var f = host.ReadSetPixelFormat(fb.Width, fb.Height);
                             if (f != null)
                                 fb = f;
                             break;
@@ -126,7 +133,7 @@ namespace NVNC
                             host.ReadFrameBufferUpdateRequest(fb);
                             break;
                         case VncHost.ClientMessages.KeyEvent:
-                            Console.WriteLine("Read KeyEvent");      
+                            Console.WriteLine("Read KeyEvent");
                             host.ReadKeyEvent();
                             break;
                         case VncHost.ClientMessages.PointerEvent:
@@ -139,22 +146,30 @@ namespace NVNC
                             break;
                     }
                 }
-                //if (!host.isRunning)
-                    //Start();
+                if (!host.isRunning)
+                proxy.StopWebsockify();
+                //Start();
             }
         }
+
         /// <summary>
-        /// Closes all active connections, and stops the VNC Server from listening on the specified port.
+        ///     Closes all active connections, and stops the VNC Server from listening on the specified port.
         /// </summary>
         public void Stop()
         {
+            Console.WriteLine("VNC server Stopped");
+            proxy.StopWebsockify();
             host.Close();
         }
+
+
         private Size ScreenSize()
         {
-            Size s = new Size();
-            s.Height = System.Windows.Forms.Screen.PrimaryScreen.Bounds.Height;
-            s.Width = System.Windows.Forms.Screen.PrimaryScreen.Bounds.Width;
+            var s = new Size
+            {
+                Height = Screen.PrimaryScreen.Bounds.Height,
+                Width = Screen.PrimaryScreen.Bounds.Width
+            };
             return s;
         }
     }
