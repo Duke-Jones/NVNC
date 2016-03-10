@@ -81,7 +81,7 @@ namespace NVNC
             proxy = new VncProxy(ProxyPort, Port);
             Task.Factory.StartNew(() =>
             {
-                proxy.StartWebsockify();
+              proxy.StartWebsockify();
             });
             host = new VncHost(Port, Name,
                 new ScreenHandler(new Rectangle(0, 0, ScreenSize().Width, ScreenSize().Height), true));

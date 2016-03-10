@@ -2,9 +2,14 @@
 
 using System;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.RegularExpressions;
+using MiscUtil.Conversion;
 
 #endregion
 
@@ -12,17 +17,20 @@ namespace NVNC
 {
     public class VncProxy
     {
-        private Process process;
+
         private readonly int proxyPort;
         private readonly int vncPort;
+    
+        private Process process;
 
-        public VncProxy(int proxyPort, int vncPort)
+        public VncProxy(int proxyPort = 5901, int vncPort = 5900)
         {
             this.proxyPort = proxyPort;
             this.vncPort = vncPort;
         }
 
 
+      
 
         //Should hold us over until a native C# version can be written
         public void StartWebsockify()
@@ -34,7 +42,8 @@ namespace NVNC
 
             var start = new ProcessStartInfo
             {
-                FileName = @"./data/websockify/websockify.exe",
+                
+                FileName = Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location) + @"\data\websockify\websockify.exe",
                 Arguments = webParams,
                 UseShellExecute = false,
                 RedirectStandardOutput = true
@@ -66,6 +75,12 @@ namespace NVNC
                 return i.ToString();
             }
             return "127.0.0.1";
+        }
+
+      
+        public void StartProxy()
+        {
+
         }
     }
 }
