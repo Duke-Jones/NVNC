@@ -39,7 +39,7 @@ namespace NVNC.Utils
             catch (Exception ex)
             {
                 Console.WriteLine(ex.ToString());
-                Thread.Sleep(200);
+            //    Thread.Sleep(200);
                 try
                 {
                     var width = r.Width;

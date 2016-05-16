@@ -112,6 +112,8 @@ namespace NVNC
 
                 while (host.isRunning)
                 {
+                  
+
                     switch (host.ReadServerMessageType())
                     {
                         case VncHost.ClientMessages.SetPixelFormat:
@@ -129,6 +131,7 @@ namespace NVNC
                             host.ReadSetEncodings();
                             break;
                         case VncHost.ClientMessages.FramebufferUpdateRequest:
+
                             Console.WriteLine("Read FrameBufferUpdateRequest");
                             host.ReadFrameBufferUpdateRequest(fb);
                             break;

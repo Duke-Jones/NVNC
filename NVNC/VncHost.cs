@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Security.Cryptography;
@@ -137,9 +138,10 @@ namespace NVNC
             var prefEnc = Encoding.RawEncoding;
             try
             {
-                for (var i = 0; i < Encodings.Length; i++)
-                    if ((Encoding) Encodings[i] == prefEnc)
-                        return prefEnc;
+                if (Encodings.Any(t => (Encoding) t == prefEnc))
+                {
+                    return prefEnc;
+                }
             }
             catch
             {
@@ -542,6 +544,7 @@ namespace NVNC
         /// </summary>
         private void DoFrameBufferUpdate(Framebuffer fb, bool incremental, int x, int y, int width, int height)
         {
+
             //if (incremental)
             //    return;
             Trace.WriteLine("X: " + x + " Y: " + y + " W: " + fb.Width + " H: " + fb.Height);
@@ -594,7 +597,7 @@ namespace NVNC
         /// </summary>
         public void WriteFrameBufferUpdate(ICollection<EncodedRectangle> rectangles)
         {
-            var Watch = Stopwatch.StartNew();
+            var watch = Stopwatch.StartNew();
             try
             {
                 WriteServerMessageType(ServerMessages.FramebufferUpdate);
@@ -605,8 +608,8 @@ namespace NVNC
                     e.WriteData();
                 writer.Flush();
 
-                Watch.Stop();
-                Trace.WriteLine("Sending took: " + Watch.Elapsed);
+                watch.Stop();
+                Trace.WriteLine("Sending took: " + watch.Elapsed);
             }
             catch (IOException ex)
             {
@@ -746,11 +749,11 @@ namespace NVNC
                 writer.Write(firstColor);
                 writer.Write((ushort) colors.Length);
 
-                for (var i = 0; i < colors.Length; i++)
+                foreach (Color t in colors)
                 {
-                    writer.Write((ushort) colors[i].R);
-                    writer.Write((ushort) colors[i].G);
-                    writer.Write((ushort) colors[i].B);
+                    writer.Write((ushort) t.R);
+                    writer.Write((ushort) t.G);
+                    writer.Write((ushort) t.B);
                 }
                 writer.Flush();
             }
