@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
-using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Security.Cryptography;
@@ -138,15 +137,13 @@ namespace NVNC
             var prefEnc = Encoding.RawEncoding;
             try
             {
-                if (Encodings.Any(t => (Encoding) t == prefEnc))
-                {
-                    return prefEnc;
-                }
+                for (var i = 0; i < Encodings.Length; i++)
+                    if ((Encoding) Encodings[i] == prefEnc)
+                        return prefEnc;
             }
             catch
             {
-                Console.WriteLine("No encoding");
-               prefEnc = Encoding.RawEncoding;
+                prefEnc = Encoding.RawEncoding;
             }
             return prefEnc;
         }

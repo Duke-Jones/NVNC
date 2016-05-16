@@ -54,12 +54,12 @@ namespace NVNC.Encodings
                         if (subencoding == 0)
                         {
                             var pixelz = PixelGrabber.CopyPixels(pixels, w, currentX, currentY, tileW, tileH);
-                            foreach (int t in pixelz)
+                            for (var i = 0; i < pixelz.Length; ++i)
                             {
                                 var b = 0;
 
                                 //The CPixel structure (Compressed Pixel) has 3 bytes, opposed to the normal pixel which has 4.
-                                var pixel = t;
+                                var pixel = pixelz[i];
                                 var pbytes = new byte[3];
 
                                 pbytes[b++] = (byte) (pixel & 0xFF);

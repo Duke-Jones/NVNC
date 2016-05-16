@@ -65,7 +65,6 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="System.Windows.Forms" />
-    <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Encodings\ZlibRectangle.cs" />

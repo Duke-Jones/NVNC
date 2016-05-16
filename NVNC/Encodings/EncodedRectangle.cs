@@ -16,7 +16,7 @@ namespace NVNC.Encodings
         protected Rectangle2 rectangle;
         protected VncHost rfb;
 
-        protected EncodedRectangle(VncHost rfb, Framebuffer framebuffer, Rectangle2 rectangle)
+        public EncodedRectangle(VncHost rfb, Framebuffer framebuffer, Rectangle2 rectangle)
         {
             this.rfb = rfb;
             this.framebuffer = framebuffer;
@@ -28,7 +28,10 @@ namespace NVNC.Encodings
         /// <summary>
         ///     Gets the rectangle that needs to be encoded.
         /// </summary>
-        public Rectangle2 UpdateRectangle => rectangle;
+        public Rectangle2 UpdateRectangle
+        {
+            get { return rectangle; }
+        }
 
         /// <summary>
         ///     Encode the pixel data from the supplied rectangle and store it in the bytes array.

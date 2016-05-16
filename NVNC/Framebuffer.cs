@@ -193,20 +193,18 @@ namespace NVNC
             if (b.Length != 16)
                 throw new ArgumentException("Length of b must be 16 bytes.");
 
-            var buffer = new Framebuffer(width, height)
-            {
-                BitsPerPixel = Convert.ToInt32(b[0]),
-                Depth = Convert.ToInt32(b[1]),
-                BigEndian = b[2] != 0,
-                TrueColor = b[3] != 0,
-                RedMax = Convert.ToInt32(b[5] | b[4] << 8),
-                GreenMax = Convert.ToInt32(b[7] | b[6] << 8),
-                BlueMax = Convert.ToInt32(b[9] | b[8] << 8),
-                RedShift = Convert.ToInt32(b[10]),
-                GreenShift = Convert.ToInt32(b[11]),
-                BlueShift = Convert.ToInt32(b[12])
-            };
+            var buffer = new Framebuffer(width, height);
 
+            buffer.BitsPerPixel = Convert.ToInt32(b[0]);
+            buffer.Depth = Convert.ToInt32(b[1]);
+            buffer.BigEndian = b[2] != 0;
+            buffer.TrueColor = b[3] != 0;
+            buffer.RedMax = Convert.ToInt32(b[5] | b[4] << 8);
+            buffer.GreenMax = Convert.ToInt32(b[7] | b[6] << 8);
+            buffer.BlueMax = Convert.ToInt32(b[9] | b[8] << 8);
+            buffer.RedShift = Convert.ToInt32(b[10]);
+            buffer.GreenShift = Convert.ToInt32(b[11]);
+            buffer.BlueShift = Convert.ToInt32(b[12]);
             // Last 3 bytes are padding, ignore									
 
             return buffer;

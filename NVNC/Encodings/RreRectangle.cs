@@ -77,12 +77,10 @@ namespace NVNC.Encodings
                             var secondW = secondX - currentX + 1;
                             var secondH = secondY - currentY + 1;
 
-                            subrect = new SubRect
-                            {
-                                pixel = currentPixel,
-                                x = (ushort) currentX,
-                                y = (ushort) currentY
-                            };
+                            subrect = new SubRect();
+                            subrect.pixel = currentPixel;
+                            subrect.x = (ushort) currentX;
+                            subrect.y = (ushort) currentY;
 
                             if (firstW*firstH > secondW*secondH)
                             {
@@ -115,15 +113,15 @@ namespace NVNC.Encodings
 
             using (var ms = new MemoryStream())
             {
-                foreach (SubRect t in subrects)
+                for (var i = 0; i < subrects.Length; i++)
                 {
-                    var data = PixelGrabber.GrabBytes(t.pixel, framebuffer);
+                    var data = PixelGrabber.GrabBytes(subrects[i].pixel, framebuffer);
 
                     //This is how BigEndianBinaryWriter writes short values :)
-                    var x = Flip(BitConverter.GetBytes(t.x));
-                    var y = Flip(BitConverter.GetBytes(t.y));
-                    var w = Flip(BitConverter.GetBytes(t.w));
-                    var h = Flip(BitConverter.GetBytes(t.h));
+                    var x = Flip(BitConverter.GetBytes(subrects[i].x));
+                    var y = Flip(BitConverter.GetBytes(subrects[i].y));
+                    var w = Flip(BitConverter.GetBytes(subrects[i].w));
+                    var h = Flip(BitConverter.GetBytes(subrects[i].h));
 
                     ms.Write(data, 0, data.Length);
                     ms.Write(x, 0, x.Length);

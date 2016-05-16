@@ -26,13 +26,13 @@ namespace NVNC.Encodings
             rfb.WriteUInt32(Convert.ToUInt32(subrects.Length));
 
             WritePixel32(bgpixel);
-            foreach (SubRect t in subrects)
+            for (var i = 0; i < subrects.Length; i++)
             {
-                WritePixel32(t.pixel);
-                rfb.WriteByte(Convert.ToByte(t.x));
-                rfb.WriteByte(Convert.ToByte(t.y));
-                rfb.WriteByte(Convert.ToByte(t.w));
-                rfb.WriteByte(Convert.ToByte(t.h));
+                WritePixel32(subrects[i].pixel);
+                rfb.WriteByte(Convert.ToByte(subrects[i].x));
+                rfb.WriteByte(Convert.ToByte(subrects[i].y));
+                rfb.WriteByte(Convert.ToByte(subrects[i].w));
+                rfb.WriteByte(Convert.ToByte(subrects[i].h));
             }
         }
     }

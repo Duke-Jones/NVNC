@@ -3,7 +3,6 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
-using System.Drawing.Imaging;
 using NVNC.Utils.ScreenTree;
 
 #endregion
@@ -35,17 +34,15 @@ namespace NVNC.Utils
             var rect = new Rectangle2(screen);
             Bounds = rect;
 
-            //One of the most expensive operations, getting the screen capture. Should be used as less as possibl
-            var screenShot = PixelGrabber.CreateScreenCapture(screen);
-        
-           var pixels = PixelGrabber.GrabPixels(screenShot);
-           LastPixels = pixels;
-        
-          var minTHeight = Bounds.Height/6;
+            //One of the most expensive operations, getting the screen capture. Should be used as less as possible
+            var pixels = PixelGrabber.GrabPixels(PixelGrabber.CreateScreenCapture(screen));
+            LastPixels = pixels;
+
+            var minTHeight = Bounds.Height/6;
             var minTWidth = Bounds.Width/8;
-           current = new QuadTree(rect, pixels /*, minTHeight, minTWidth*/);
-           previous = current;
-           firstScreen = true;
+            current = new QuadTree(rect, pixels /*, minTHeight, minTWidth*/);
+            previous = current;
+            firstScreen = true;
         }
 
         public ScreenHandler(Rectangle2 screen, bool hashOnlyCompare) : this(screen.ToRectangle(), hashOnlyCompare)
