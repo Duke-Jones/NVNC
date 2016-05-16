@@ -4,6 +4,7 @@ using System;
 using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading;
 
@@ -31,10 +32,16 @@ namespace NVNC.Utils
                 var bitmap = new Bitmap(width, height);
                 var g = Graphics.FromImage(bitmap);
                 g.CopyFromScreen(r.X, r.Y, 0, 0, new Size(width, height));
-
                 t.Stop();
                 Trace.WriteLine("Screen capture done in: " + t.ElapsedMilliseconds + "ms");
-                return bitmap;
+                using (var m = new MemoryStream())
+                {
+                    bitmap.Save(m, ImageFormat.Jpeg);
+
+                    var img = Image.FromStream(m);
+                   
+                    return new Bitmap(img);
+                }
             }
             catch (Exception ex)
             {
