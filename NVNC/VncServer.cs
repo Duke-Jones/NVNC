@@ -2,7 +2,7 @@
 
 using System;
 using System.Drawing;
-using System.Threading.Tasks;
+using System.Threading;
 using System.Windows.Forms;
 using NVNC.Utils;
 
@@ -66,6 +66,7 @@ namespace NVNC
 
         public void Start()
         {
+
             if (string.IsNullOrEmpty(Name))
                 throw new ArgumentNullException("Name", "The VNC Server Name cannot be empty.");
             if (Port == 0)
@@ -74,15 +75,15 @@ namespace NVNC
             if (ProxyPort == 0)
 
                 throw new ArgumentNullException("ProxyPort", "You must set a proxy port.");
+            new Thread(() =>
+            {
 
-
-            Console.WriteLine("Started VNC Server at port: " + Port + " and proxy port at: " + ProxyPort);
+                Console.WriteLine("Started VNC Server at port: " + Port + " and proxy port at: " + ProxyPort);
 
             proxy = new VncProxy(ProxyPort, Port);
-            Task.Factory.StartNew(() =>
-            {
-              proxy.StartWebsockify();
-            });
+
+            proxy.StartWebsockify();
+
             host = new VncHost(Port, Name,
                 new ScreenHandler(new Rectangle(0, 0, ScreenSize().Width, ScreenSize().Height), true));
 
@@ -97,7 +98,7 @@ namespace NVNC
             if (!host.WriteAuthentication(Password))
             {
                 Console.WriteLine("Authentication failed !");
-                host.Close();
+                Stop();
                 //Start();
             }
             else
@@ -112,10 +113,9 @@ namespace NVNC
 
                 while (host.isRunning)
                 {
-                  
-
                     switch (host.ReadServerMessageType())
                     {
+
                         case VncHost.ClientMessages.SetPixelFormat:
                             Console.WriteLine("Read SetPixelFormat");
                             var f = host.ReadSetPixelFormat(fb.Width, fb.Height);
@@ -150,9 +150,11 @@ namespace NVNC
                     }
                 }
                 if (!host.isRunning)
-                proxy.StopWebsockify();
+                    Console.WriteLine("Stopping Websockify");
+                    proxy.StopWebsockify();
                 //Start();
             }
+            }).Start();
         }
 
         /// <summary>
@@ -160,9 +162,8 @@ namespace NVNC
         /// </summary>
         public void Stop()
         {
-            Console.WriteLine("VNC server Stopped");
             proxy.StopWebsockify();
-            host.Close();
+            host?.Close();;
         }
 
 

@@ -66,7 +66,7 @@ namespace NVNC
             ServerCutText = 3
         }
 
-        private readonly HashSet<Socket> clients = new HashSet<Socket>();
+        private readonly HashSet<Socket> _clients = new HashSet<Socket>();
 
         public string CutText;
 
@@ -98,6 +98,11 @@ namespace NVNC
             Start();
         }
 
+        public bool KillIfDc()
+        {
+            return _clients.Any(client => !client.Connected);
+        }
+
         //Shared flag
         public bool Shared { get; set; }
 
@@ -106,7 +111,7 @@ namespace NVNC
 
         public ICollection<Socket> Clients
         {
-            get { return clients; }
+            get { return _clients; }
         }
 
         //Supported encodings
@@ -183,7 +188,7 @@ namespace NVNC
                 reader = new BigEndianBinaryReader(stream);
                 writer = new BigEndianBinaryWriter(stream);
                 zlibWriter = new ZlibCompressedWriter(stream);
-                clients.Add(localClient);
+                _clients.Add(localClient);
             }
             catch (Exception ex)
             {
@@ -285,9 +290,10 @@ namespace NVNC
         /// </summary>
         public void Close()
         {
-           
+            Console.WriteLine("Stopping VNC Server");
             isRunning = false;
             serverSocket.Stop();
+            Console.WriteLine("Socket stopped for VNC");
             if (localClient.Connected)
                 localClient.Disconnect(true);
         }
@@ -544,7 +550,6 @@ namespace NVNC
         /// </summary>
         private void DoFrameBufferUpdate(Framebuffer fb, bool incremental, int x, int y, int width, int height)
         {
-
             //if (incremental)
             //    return;
             Trace.WriteLine("X: " + x + " Y: " + y + " W: " + fb.Width + " H: " + fb.Height);
@@ -749,7 +754,7 @@ namespace NVNC
                 writer.Write(firstColor);
                 writer.Write((ushort) colors.Length);
 
-                foreach (Color t in colors)
+                foreach (var t in colors)
                 {
                     writer.Write((ushort) t.R);
                     writer.Write((ushort) t.G);
