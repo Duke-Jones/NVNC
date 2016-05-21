@@ -36,7 +36,7 @@ namespace NVNC
             var start = new ProcessStartInfo
             {
                 FileName =
-                    Path.GetDirectoryName(_path),
+                 _path,
                 Arguments = webParams,
                 UseShellExecute = false,
                 RedirectStandardOutput = true
