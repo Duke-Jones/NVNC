@@ -12,7 +12,7 @@ namespace VNCTest
     {
         private static void Main(string[] args)
         {
-            var s = new VncServer("a", 5901, 5900, "Ulterius VNC");
+            var s = new VncServer("", "a", 5901, 5900, "Ulterius VNC");
             try
             {
                 s.Start();

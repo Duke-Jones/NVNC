@@ -25,12 +25,13 @@ namespace NVNC
         ///     Port is set to 5900, the Name is set to Default, and there is no password.
         /// </summary>
         public VncServer()
-            : this("", 5901, 5900, "Ulterius VNC")
+            : this("", "", 5901, 5900, "Ulterius VNC")
         {
         }
 
-        public VncServer(string password, int proxyPort, int port, string name)
+        public VncServer(string path, string password, int proxyPort, int port, string name)
         {
+            Path = path;
             Password = password;
             ProxyPort = proxyPort;
             Port = port;
@@ -56,6 +57,7 @@ namespace NVNC
 
         public int Port { get; set; }
         public int ProxyPort { get; set; }
+        public string Path { get; set; }
         public string Password { get; set; }
 
         /// <summary>
@@ -80,7 +82,7 @@ namespace NVNC
 
                 Console.WriteLine("Started VNC Server at port: " + Port + " and proxy port at: " + ProxyPort);
 
-            proxy = new VncProxy(ProxyPort, Port);
+            proxy = new VncProxy(Path, ProxyPort, Port);
 
             proxy.StartWebsockify();
 

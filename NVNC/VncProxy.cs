@@ -16,9 +16,11 @@ namespace NVNC
     {
         private readonly int _proxyPort;
         private readonly int _vncPort;
+        private readonly string _path;
 
-        public VncProxy(int proxyPort = 5901, int vncPort = 5900)
+        public VncProxy(string path, int proxyPort = 5901, int vncPort = 5900)
         {
+            _path = path;
             _proxyPort = proxyPort;
             _vncPort = vncPort;
         }
@@ -34,7 +36,7 @@ namespace NVNC
             var start = new ProcessStartInfo
             {
                 FileName =
-                    Path.GetDirectoryName(Assembly.GetEntryAssembly().Location) + @"\data\websockify\websockify.exe",
+                    Path.GetDirectoryName(_path),
                 Arguments = webParams,
                 UseShellExecute = false,
                 RedirectStandardOutput = true
